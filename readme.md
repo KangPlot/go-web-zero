@@ -1,6 +1,20 @@
 # go web zero（quickly start）
+感谢up软件工艺师录制的go web 入门视频
+[source video](https://www.bilibili.com/video/BV1Xv411k7Xn?p=1)
 
-[source video](https://www.bilibili.com/video/BV1Xv411k7Xn?p=7)
+<div align="center">
+<img alt="img_7.png" height="300" src="img_7.png" width="400" style="align-items: center"/>
+</div>
+
+以下是我跟着学习记录的笔记及各个视频对应的源代码
+
+Handler 两个参数都是引用传递
+
+指针传递：w http.ResponseWriter,
+ResponseWriter是一个interface，代表了response的指针
+response是一个struct，他的指针实现了各种方法
+指针传递：r *http.Request 
+
 
 ## p6
 
@@ -41,7 +55,7 @@ func main() {
 ## p7 
 [source video](https://www.bilibili.com/video/BV1Xv411k7Xn?p=7)
 
-![img.png](img.png)
+![img_9.png](img_9.png)
 
 ~~~go
 package main
@@ -95,6 +109,7 @@ index.html
 
 ## p8 上传文件
 方法1
+
 ![img_3.png](img_3.png)
 
 
@@ -132,9 +147,11 @@ func main() {
 
 
 成功读取文件
+
 ![img_5.png](img_5.png)
 
 方法2
+
 ![img_4.png](img_4.png)
 
 ~~~go
@@ -198,3 +215,60 @@ index.html
 
 ![img_6.png](img_6.png)
 
+
+
+
+
+
+
+
+## p9 
+无栗子
+
+![img_10.png](img_10.png)
+
+## p10 ResponseWriter
+
+~~~go
+package main
+
+import "net/http"
+
+func writeExample(w http.ResponseWriter, r *http.Request) {
+	str := `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Go web</title>
+</head>
+<body>
+    hello go go go world
+</body>
+</html>`
+
+	w.Write([]byte(str)) // 把str 写入到body 里面， 需要类型转换
+}
+func main() {
+
+	server := http.Server{
+		Addr: "localhost:8080",
+	}
+	http.HandleFunc("/write", writeExample)
+	server.ListenAndServe()
+
+}
+~~~
+
+
+写入结果：
+
+<img alt="img_11.png" height="100" src="img_11.png" title="结果截图" width="300"/>
+
+
+
+
+
+# 完结撒花
+
+都看到这里了，点个star吧:P
+<img alt="img_8.png" height="200" src="img_8.png" title="logo" width="250"/>

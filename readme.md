@@ -626,9 +626,118 @@ controller：
 
 
 
+## p22
+
+go 和json 属性映射
+
+![img_24.png](img_24.png)
+
+![img_25.png](img_25.png)
 
 
 
+## p23 中间件
+
+![img_26.png](img_26.png)
+
+只要实现ServeHTTP 方法就可
+
+main.go
+~~~go
+package main
+
+import (
+	"encoding/json"
+	"go-web-zero/p23/middleware"
+	"net/http"
+)
+
+type Company struct {
+	ID      int
+	Name    string
+	Country string
+}
+
+func main() {
+	http.HandleFunc("/companies", func(w http.ResponseWriter, r *http.Request) {
+		c := Company{
+			ID:      123,
+			Name:    "gggoolle",
+			Country: "USA",
+		}
+		enc := json.NewEncoder(w)
+		enc.Encode(c)
+	})
+	// 使用中间件
+	http.ListenAndServe("localhost:8080", new(middleware.AuthMiddleware))
+}
+~~~
+
+auth.go
+~~~go
+package middleware
+
+import "net/http"
+
+// 链式结构， Next 设置为 什么，下一个handler 就是什么
+// AuthMiddleware ..
+type AuthMiddleware struct {
+	Next http.Handler
+}
+
+func (am *AuthMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// 如果只有一个中间件，改中间件的字段next 为nil, 交给默认路由器处理
+	if am.Next == nil {
+
+		am.Next = http.DefaultServeMux
+	}
+	// 判断auth
+	auth := r.Header.Get("Authorization")
+	if auth != "" {
+		// before 路由
+		am.Next.ServeHTTP(w, r)
+		// after 路由
+	} else {
+		w.WriteHeader(http.StatusUnauthorized)
+	}
+}
+~~~
+
+测试：
+~~~html
+GET http://localhost:8080/companies HTTP/1.1
+
+# with auth
+GET http://localhost:8080/companies HTTP/1.1
+Authorization: aadfsafds
+~~~
+
+![img_27.png](img_27.png)
+
+
+## p25 https
+
+![img_28.png](img_28.png)
+http.ListenAndServeTLS() 需要四个参数
+
+
+## p27 测试
+
+![img_29.png](img_29.png)
+
+## p28 性能分析
+
+![img_30.png](img_30.png)
+
+![img_31.png](img_31.png)
+
+## p29 部署
+Linux 部署
+
+![img_32.png](img_32.png)
+
+
+# p30 CRUD 栗子
 
 
 # 完结撒花
@@ -636,3 +745,6 @@ controller：
 都看到这里了，点个star吧:P
 <img alt="img_8.png" height="200" src="img_8.png" title="logo" width="250"/>
 
+
+
+<img src="http://www.gifbay.com/gif/im_late_for_work-14316/">

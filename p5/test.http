@@ -1,10 +1,10 @@
 
+# GET
 GET http://localhost:8080/header HTTP/1.1
 
-# POST
+# POST   test body
 POST http://localhost:8080/post HTTP/1.1
 content-type: application/json
-
 {
     "name":"sample"
     "time":"Wed, 21 Oct 2020 18:12:12 GMT"

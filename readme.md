@@ -3,12 +3,12 @@
 [source video](https://www.bilibili.com/video/BV1Xv411k7Xn?p=1)
 
 <div align="center">
-<img alt="img_7.png" height="300" src="img_7.png" width="400" style="align-items: center"/>
+<img alt="img_7.png" height="200" src="img_7.png" width="250" style="align-items: center"/>
 </div>
 
 以下是我跟着学习记录的笔记及各个视频对应的源代码
 
-## p1 
+## p1 demo
 一个web 打印hello, 只需两行代码!
 code：
 ~~~go
@@ -236,6 +236,50 @@ http.HandleFunc 第一个参数路由路径“/home”
 第二个参数 Handler **函数**（http.HandleFunc  **将Handler函数转换为Handler**）
 
 ## p4 内置的Handlers
+
+5 个
+
+![img_45.png](img_45.png)
+
+## p5 Request
+Request 是一个struct, 表示请求消息
+
+源码
+
+![img_46.png](img_46.png)
+
+url 是一个包， URL 是一个struct
+![img_47.png](img_47.png)
+
+
+ ~~~go
+package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	server := http.Server{
+		Addr:    "localhost:8080",
+		Handler: nil,
+	}
+
+	http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
+		// 打印header
+		fmt.Fprintln(w, r.Header)
+
+		// 打印body
+		length := r.ContentLength
+		body := make([]byte, length)
+		r.Body.Read(body)
+		fmt.Fprintln(w, string(body)) //  结果写入到ResponseWrite 里面，需要转为字符串，才能看明白
+
+	})
+	server.ListenAndServe()
+}
+~~~
 
 
 ## p6
@@ -969,4 +1013,4 @@ Linux 部署
 
 
 
-<img src="http://www.gifbay.com/gif/im_late_for_work-14316/">
+

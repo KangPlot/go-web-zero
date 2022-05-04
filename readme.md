@@ -268,7 +268,371 @@ func main() {
 
 
 
+
+写入json到web 里面
+
+![img_12.png](img_12.png)
+
+源代码：
+~~~go
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+func writeExample(w http.ResponseWriter, r *http.Request) {
+	str := `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Go web</title>
+</head>
+<body>
+    hello go go go world
+</body>
+</html>`
+
+	w.Write([]byte(str)) // 把str 写入到body 里面， 需要类型转换
+}
+
+func headerExample(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Location", "http://baidu.com")
+	// 必须调用前修改header
+	w.WriteHeader(302) // 重定向302
+}
+
+type POST struct {
+	User   string
+	Thread []string
+}
+
+func jsonExample(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	post := &POST{
+		User:   "xxpkk",
+		Thread: []string{"first", "second", "third"},
+	}
+	json, _ := json.Marshal(post)
+	w.Write(json)
+}
+
+func main() {
+
+	server := http.Server{
+		Addr: "localhost:8080",
+	}
+	http.HandleFunc("/write", writeExample)
+	http.HandleFunc("/redirect", headerExample)
+
+	//json 案例
+	http.HandleFunc("/json", jsonExample)
+	server.ListenAndServe()
+
+}
+~~~
+
+
+## p11 内置的响应Response
+
+
+## p12 模板 [video](https://www.bilibili.com/video/BV1Xv411k7Xn?p=12)
+
+![img_13.png](img_13.png)
+
+原理
+
+![img_14.png](img_14.png)
+
+课程代码
+~~~go
+package main
+
+import (
+	"html/template"
+	"net/http"
+)
+
+// 自定义的handler
+func process(w http.ResponseWriter, r *http.Request) {
+	// 解析模板文件,相对路径
+	t, _ := template.ParseFiles("tmpl.html")
+	// 执行模板，传入数据，替换{{.}}
+	t.Execute(w, "hello go go go go")
+}
+
+func main() {
+	server := http.Server{
+		Addr: "localhost:8080",
+	}
+	http.HandleFunc("/test", process)
+	server.ListenAndServe()
+}
+~~~
+
+## p13
+
+源码解读：
+
+解析模板源（可以是字符串或模板文件），从而创建一个解析好的模板的 struct
+执行解析好的模板，并传入 ResponseWriter 和 数据。
+这会触发模板引擎组合解析好的模板和数据，来产生最终的 HTML，并将它传递给 ResponseWriter
+
+![img_15.png](img_15.png)
+
+
+code
+~~~go
+package main
+
+import (
+	"html/template"
+	"net/http"
+)
+
+func main() {
+
+	server := http.Server{
+		Addr: "localhost:8080",
+	}
+	http.HandleFunc("/process", process)
+	server.ListenAndServe()
+
+}
+
+func process(w http.ResponseWriter, r *http.Request) {
+	//解析1个模板
+	t, _ := template.ParseFiles("tmpl.html")
+	t.Execute(w, "hello go")
+	////等价于下面两句话
+	//t := template.New("tmpl.html")
+	//t, _ = t.ParseFiles("tmpl.html")
+
+	//t1，_, := template.ParseGlob("*.html")
+
+	//解析多个模板
+	ts, _ := template.ParseFiles("t1.html", "t2.html")
+	ts.ExecuteTemplate(w, "t2.html", "hello go t2")
+
+}
+
+~~~
+
+
+
+
+执行出错
+
+![img_16.png](img_16.png)
+
+![img_17.png](img_17.png)
+
+
+## p14 demo 模板执行与解析
+
+## p18 链接数据库
+
+连接到数据库
+
+解决加载驱动问题，这里设置一下代理，就能正常下载github资源了
+
+![img_19.png](img_19.png)
+
+[go代理](https://cloud.tencent.com/developer/article/1773630)
+
+func(*DB) pingContext 函数
+
+![img_20.png](img_20.png)
+
+~~~go
+package main
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"log"
+	// 数据库驱动， _ 自我注册init 会自动调用。把包变成_ , 不会直接使用。
+	//没有变量，不影响代码里面的逻辑
+	_ "github.com/denisenkom/go-mssqldb"
+)
+
+var db *sql.DB // 指向数据库
+func main() {
+	// 连接字符串
+	connStr := fmt.Sprintf("server=%s;user id = %s; "+
+		""+
+		"password=%s;port=%d;database=%s;",
+		server, user, password, port, database)
+	fmt.Println(connStr)
+
+	db, err := sql.Open("sqlserver", connStr)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	ctx := context.Background()
+
+	err = db.PingContext(ctx)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	// 测试是否连接数据库
+	fmt.Println("connected!")
+}
+
+const (
+	server   = "xxxx.xxx"
+	port     = 1433
+	user     = "xxx"
+	password = "123"
+	database = "go-db"
+)
+~~~
+
+## p19 数据库的查询
+
+![img_21.png](img_21.png)
+
+
+
+main.go
+~~~go
+package main
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"log"
+	// 数据库驱动， _ 自我注册init 会自动调用。把包变成_ , 不会直接使用。
+	//没有变量，不影响代码里面的逻辑
+	_ "github.com/denisenkom/go-mssqldb"
+)
+
+var db *sql.DB // 指向数据库
+func main() {
+	// 连接字符串
+	connStr := fmt.Sprintf("server=%s;user id = %s; "+
+		""+
+		"password=%s;port=%d;database=%s;",
+		server, user, password, port, database)
+	fmt.Println(connStr)
+
+	var err error
+	// 这个db 需要是全局的，不能用:= 
+	db, err = sql.Open("sqlserver", connStr)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	ctx := context.Background()
+
+	err = db.PingContext(ctx)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	// 测试是否连接数据库
+	fmt.Println("connected!")
+
+	// 查询
+	one, err := getOne(103)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	fmt.Println(one)
+}
+
+const (
+	server   = "xxxx.xxx"
+	port     = 1433
+	user     = "xxx"
+	password = "123"
+	database = "go-db"
+)
+~~~
+
+
+model  对应数据库的结构
+~~~go
+package main
+
+// 对应数据库的结构
+type app struct {
+	ID     int
+	name   string
+	status int
+	level  int
+	order  int
+}
+~~~
+
+service ：sql 语句
+~~~go
+package main
+
+func getOne(id int) (a app, err error) {
+	a = app{}
+
+	// [order]  是sql里面的关键字，加上【】
+	err = db.QueryRow("select id, name, status,"+
+		"level, [order] from dbo.App").Scan(
+		&a.ID, &a.name, &a.status, &a.level, &a.order)
+	return
+}
+~~~
+
+## p20 crud
+多行查询
+~~~go
+// 返回的切片【】
+func getMany(id int) (apps []app, err error) {
+
+	// [order]  是sql里面的关键字，加上【】
+	rows, err := db.Query("select id, name, status,"+
+		"level, [order] from dbo.App where id > @id", sql.Named("Id", id))
+
+	//对rows 遍历
+
+	for rows.Next() {
+		a := app{}
+		err = rows.Scan(
+			&a.ID, &a.name, &a.status, &a.level, &a.order)
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+		apps = append(apps, a)
+	}
+	return apps, err
+
+}
+~~~
+
+
+
+
+# p21 路由
+
+针对不同的路径，使用不同的handler
+
+**之前的代码都在main 函数里面，不符合项目架构** 增加control 层
+
+main()：设置类工作
+
+controller：
+    静态资源
+    把不同的请求送到不同的 controller 进行处理
+
+![img_22.png](img_22.png)
+
+
+
+
+
+
+
+
 # 完结撒花
 
 都看到这里了，点个star吧:P
 <img alt="img_8.png" height="200" src="img_8.png" title="logo" width="250"/>
+

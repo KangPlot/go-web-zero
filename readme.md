@@ -8,12 +8,234 @@
 
 以下是我跟着学习记录的笔记及各个视频对应的源代码
 
+## p1 
+一个web 打印hello, 只需两行代码!
+code：
+~~~go
+package main
+
+import "net/http"
+
+func main() {
+	// 调用适配器处理函数，两个参数，一个http地址，一个是hangler函数
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("hello go"))
+	})
+
+	//设置web 服务器,俩个参数，一个监听地址port,一个handler,默认是nil， 采用多路复用mux
+	http.ListenAndServe("localhost:8080", nil)
+
+}
+~~~
+
+浏览器运行截图
+
+![img_33.png](img_33.png)
+
+## p2 Handle 请求 上
+~~~go
+http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+w.Write([]byte("hello go"))
+})
+~~~
 Handler 两个参数都是引用传递
+
+Handler Handler // handler to invoke, http.DefaultServeMux if nil
 
 指针传递：w http.ResponseWriter,
 ResponseWriter是一个interface，代表了response的指针
 response是一个struct，他的指针实现了各种方法
-指针传递：r *http.Request 
+指针传递：r *http.Request
+
+![img_34.png](img_34.png)
+
+![img_35.png](img_35.png)
+
+源代码：
+http.Server 是一个struct
+
+![img_36.png](img_36.png
+
+
+~~~go
+	http.ListenAndServe("localhost:8080", nil)
+~~~
+我们可以自己定义server, 可配置方法：http.Server{}
+~~~go
+	// 等价于上面一句话
+	server := http.Server{
+		Addr: ("localhost:8080"),
+		Handler: nil,
+	}
+	server.ListenAndServe()
+~~~
+
+理解Handler
+
+1.这是一个接口
+2.里面有ServeHTTP方法, 任何东西只要有这个方法就是Handler
+
+3.DefaultServeMux 也是一个Handler
+
+![img_37.png](img_37.png)
+
+
+code
+
+~~~go
+package main
+
+import "net/http"
+
+func main() {
+	mh := myHandler{} // 要使用的是这个指针
+
+	//http.ListenAndServe("localhost:8080", nil)
+
+	// 等价于上面一句话
+	server := http.Server{
+		Addr: ("localhost:8080"),
+		//Handler: nil,
+		Handler: &mh,
+	}
+	server.ListenAndServe()
+
+}
+
+// 自定义handler, 实现ServerHTTP 方法
+type myHandler struct {
+}
+
+//ServeHTTP 不是ServerHTTP
+func (m *myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("helllllllo my handler"))
+}
+~~~
+
+![img_38.png](img_38.png)
+
+
+
+
+
+## p3 Handle 请求 下
+多个Hander   
+
+处理不同的路径/home, /about, /others
+
+![img_39.png](img_39.png)
+ 两个参数：
+
+
+	// 不同路径对应不用handler
+	http.Handle("/hello", &hello)
+	http.Handle("/about", &about)
+	http.Handle("/home", &mh)
+
+code
+~~~go
+package main
+
+import "net/http"
+
+func main() {
+	mh := myHandler{} // 要使用的是这个指针
+	about := aboutHandler{}
+	hello := helloHandler{}
+
+	//http.ListenAndServe("localhost:8080", nil)
+
+	// 等价于上面一句话
+	server := http.Server{
+		Addr:    ("localhost:8080"),
+		Handler: nil,
+		//Handler: &mh,
+	}
+	// 不同路径对应不用handler
+	http.Handle("/hello", &hello)
+	http.Handle("/about", &about)
+	http.Handle("/home", &mh)
+	server.ListenAndServe()
+
+}
+
+// 自定义handler, 实现ServerHTTP 方法
+type myHandler struct {
+}
+
+// 自定义handler, 实现ServerHTTP 方法
+type helloHandler struct {
+}
+
+type aboutHandler struct {
+}
+
+//ServeHTTP 不是ServerHTTP
+func (m *myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("home handler"))
+}
+
+func (m *helloHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("hello handler"))
+}
+func (m *aboutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("about handler"))
+}
+
+~~~
+不同路径对应不用handler
+
+![img_40.png](img_40.png)
+
+![img_41.png](img_41.png)
+
+第二个函数，http.HandleFunc
+
+![img_42.png](img_42.png)
+
+code 
+~~~go
+
+package main
+
+import "net/http"
+
+func main() {
+
+	server := http.Server{
+		Addr:    ("localhost:8080"),
+		Handler: nil,
+		//Handler: &mh,
+	}
+	// 不同路径对应不用handler
+	//http.Handle("/home", &mh)
+    // 采用这个方法路由
+	http.HandleFunc("/welcome", welcomeExample) // 这个不能是welcomeExample（）
+	server.ListenAndServe()
+
+}
+
+// 自定义http.handleFunc 函数, 形参和handler函数一样
+func welcomeExample(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("welcome!"))
+}
+~~~
+
+
+![img_43.png](img_43.png)
+
+
+总结：两个函数：
+
+![img_44.png](img_44.png)
+
+http.Handle 第一个参数路由路径“/home”
+第二个参数 Handler
+
+http.HandleFunc 第一个参数路由路径“/home”
+第二个参数 Handler **函数**（http.HandleFunc  **将Handler函数转换为Handler**）
+
+## p4 内置的Handlers
 
 
 ## p6
